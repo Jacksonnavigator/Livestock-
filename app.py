@@ -1,32 +1,28 @@
 import streamlit as st
 from PIL import Image
-import requests
+import numpy as np
+import tensorflow as tf
+from model import load_model, predict
 
-# Title and description
-st.title("Livestock Health Analyzer: AI-Powered Disease Diagnosis")
-st.write("""
-    Upload an image of your livestock, and the system will diagnose potential diseases and suggest management options.
-""")
+# Load the model
+model = load_model()
 
-# Image upload section
-uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
+st.title("Livestock Health Analyzer")
+
+# Upload image
+uploaded_file = st.file_uploader("Choose an image...", type="jpg")
+
 if uploaded_file is not None:
-    # Display uploaded image
     image = Image.open(uploaded_file)
-    st.image(image, caption="Uploaded Image", use_column_width=True)
+    st.image(image, caption='Uploaded Image.', use_column_width=True)
     st.write("")
+    st.write("Classifying...")
 
-    # Call the backend API (assuming it's already set up)
-    st.write("Analyzing the image...")
-    url = "http://your-backend-api-url/predict"  # Replace with your backend API URL
-    files = {"file": uploaded_file.getvalue()}
-    response = requests.post(url, files=files)
+    # Preprocess the image
+    img_array = np.array(image.resize((224, 224))) / 255.0
+    img_array = np.expand_dims(img_array, axis=0)
 
-    if response.status_code == 200:
-        result = response.json()
-        st.write("Diagnosis:", result["diagnosis"])
-        st.write("Recommended Action:", result["recommendation"])
-    else:
-        st.write("Error:", response.text)
-
-# For local testing, you can run `app.py` with `streamlit run app.py`
+    # Make prediction
+    prediction = predict(model, img_array)
+    
+    st.write(f"Prediction: {prediction}")
